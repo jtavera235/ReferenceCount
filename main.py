@@ -4,7 +4,6 @@ import sys
 String  = str
 Integer = int
 Atom    = (String, Integer)
-List    = list
 Exp     = (Atom, List)
 
 class Tokenizer:
