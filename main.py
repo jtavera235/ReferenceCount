@@ -1,11 +1,6 @@
 
 import sys
 
-String  = str
-Integer = int
-Atom    = (String, Integer)
-Exp     = (Atom, List)
-
 class Tokenizer:
     def __init__(self, data):
         self.input = data
@@ -53,39 +48,62 @@ class Tokenizer:
             return True
         return False
 
+class Counter:
 
-class Parser:
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.count_list = {}
 
-    def __init__(self, tokenizer):
-        self.tokenizer = tokenizer
-        self.parsed_tokens = None
+    def save_variables(self):
+        next_is_var = False
+        for tok in self.tokens:
+            if tok == "define":
+                next_is_var = True
+            elif next_is_var == True:
+                if tok in self.count_list.keys():
+                    entry = self.count_list.get(tok)
+                    entry = entry + 1
+                    self.count_list.update({ tok: entry }) 
+                elif tok != "\n":
+                    self.count_list.update({ tok: 1 })
+                next_is_var = False
 
-    def parse(self):
-        self.parsed_tokens = self.read_token(self.tokenizer.get_tokens())
-        
-    def read_token(self, tokens):
-        if len(tokens) == 0:
-            print("unexpected EOF")
-        token = tokens.pop(0)
-        left = []
-        if token == '(':
-            while tokens[0] != ')':
-                left.append(self.read_token(tokens))
-            tokens.pop(0)
-            return left
-        else:
-            return self.atom(token)
-    
-    def atom(self, token):
-        try: return int(token)
-        except ValueError:
-            try: 
-                return float(token)
-            except ValueError:
-                return String(token)
-    
-    def get_parsed_tokens(self):
-        return self.parsed_tokens    
+    def print_counter(self):
+        for entry in self.count_list:
+            print(entry + " " + str(self.count_list.get(entry)))
+
+    def get_count(self):
+        return self.count_list
+
+class ReferenceCounter:
+
+    def __init__(self, tokens, counter):
+        self.tokens = tokens
+        self.counter = counter
+        self.summary = {}
+
+    def analyze(self):
+        index = 1
+        for tok in self.tokens:
+            if tok == "\n":
+                index = index + 1
+            elif tok in self.counter.keys():
+                entry = self.counter.get(tok)
+                entry = entry - 1
+                if entry == 0:
+                    self.summary.update({ tok: ("Reference to variable " + tok + " was dropped at line " + str(index)) })
+                else:
+                    self.counter.update({ tok: entry })
+
+    def print_summary(self):
+        for entry in self.summary:
+            print(entry + " " + str(self.summary.get(entry)))
+
+    def get_summary_as_str(self):
+        sumry = ""
+        for entry in self.summary:
+            sumry = sumry + " " + str(self.summary.get(entry)) + "\n"
+        return sumry
 
 class Input:
     def __init__(self, inp):
@@ -103,20 +121,7 @@ class Input:
 
 if __name__ == "__main__":
     inp = Input("")
-    if len(sys.argv) == 1:
-        while True:
-            val = input("<< ")
-            if val == "q" or val == "quit()" or val == "exit":
-                break
-            inp.save_input(val)
-            tokenizer = Tokenizer(inp.get_input())
-            tokenizer.tokenize()
-            if tokenizer.is_correct() == False:
-                print("Brackets are not properly aligned. Make sure every ( contains a )")         
-            parser = Parser(tokenizer)
-            parser.parse()
-            print(parser.get_parsed_tokens())
-    elif len(sys.argv) == 3:
+    if len(sys.argv) == 3:
         in_file = open(sys.argv[1], "r")
         out_file = open(sys.argv[2], "w")
         inp.save_input(in_file.read())
@@ -124,15 +129,15 @@ if __name__ == "__main__":
         tokenizer.tokenize()
         if tokenizer.is_correct() == False:
             print("Brackets are not properly aligned. Make sure every ( contains a )")         
-        parser = Parser(tokenizer)
-        parser.parse()
-        out_file_content = parser.get_parsed_tokens()
-        print(parser.get_parsed_tokens())
-        for tok in parser.get_parsed_tokens():
-            out_file.write('%s ' % tok)
+        counter = Counter(tokenizer.get_tokens())
+        counter.save_variables()
+        reference_counter = ReferenceCounter(tokenizer.get_tokens(), counter.get_count())
+        reference_counter.analyze()
+        out_file_content = reference_counter.get_summary_as_str()
+        out_file.write(out_file_content)
         out_file.close()
         in_file.close()
     else:
-        print("Unexpected usage. Expected 0 or 2 arguments but received "
+        print("Unexpected usage. Expected 2 arguments but received "
                 + str(len(sys.argv) - 1))
 

@@ -1,1 +1,6 @@
-+ 3 4 ['/', 4, 2] 
+ Reference to variable name was dropped at line 49
+ Reference to variable hell was dropped at line 50
+ Reference to variable person was dropped at line 51
+ Reference to variable josh was dropped at line 52
+ Reference to variable age1 was dropped at line 53
+ Reference to variable juan was dropped at line 54
