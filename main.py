@@ -61,9 +61,7 @@ class Counter:
                 next_is_var = True
             elif next_is_var == True:
                 if tok in self.count_list.keys():
-                    entry = self.count_list.get(tok)
-                    entry = entry + 1
-                    self.count_list.update({ tok: entry }) 
+                    raise ValueError("Variable already exists. Cannot define a variable with the same name")
                 elif tok != "\n":
                     self.count_list.update({ tok: 1 })
                 next_is_var = False
@@ -85,9 +83,9 @@ class ReferenceCounter:
     def analyze(self):
         index = 1
         for tok in self.tokens:
-            if tok == "\n":
-                index = index + 1
-            elif tok in self.counter.keys():
+            new_line_count = tok.count("\n")
+            index = index + new_line_count
+            if tok in self.counter.keys():
                 entry = self.counter.get(tok)
                 entry = entry - 1
                 if entry == 0:
@@ -128,7 +126,7 @@ if __name__ == "__main__":
         tokenizer = Tokenizer(inp.get_input())
         tokenizer.tokenize()
         if tokenizer.is_correct() == False:
-            print("Brackets are not properly aligned. Make sure every ( contains a )")         
+            raise ValueError("Brackets are not properly aligned. Make sure every ( contains a )")
         counter = Counter(tokenizer.get_tokens())
         counter.save_variables()
         reference_counter = ReferenceCounter(tokenizer.get_tokens(), counter.get_count())
